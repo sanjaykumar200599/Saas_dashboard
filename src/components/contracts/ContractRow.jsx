@@ -3,21 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { formatDate, getRiskColor, getStatusColor } from '../../utils/helpers';
 import { ExternalLink, MoreHorizontal } from 'lucide-react';
 
-const ContractRow = ({ contract, index }) => {
+const ContractRow = ({ contract = {}, index }) => {
   const navigate = useNavigate();
   const [showActions, setShowActions] = React.useState(false);
 
   const handleRowClick = () => {
-    navigate(`/contracts/${contract.id}`);
+    if (contract?.id) {
+      navigate(`/contracts/${contract.id}`);
+    }
   };
 
   const handleActionClick = (e, action) => {
     e.stopPropagation();
     setShowActions(false);
-    
+
     switch (action) {
       case 'view':
-        navigate(`/contracts/${contract.id}`);
+        contract?.id && navigate(`/contracts/${contract.id}`);
         break;
       case 'edit':
         alert('Edit functionality not implemented in demo');
@@ -36,11 +38,19 @@ const ContractRow = ({ contract, index }) => {
   };
 
   const getDaysUntilExpiry = () => {
+    if (!contract?.expiry) {
+      return { text: 'No expiry', color: 'text-gray-400' };
+    }
+
     const today = new Date();
     const expiryDate = new Date(contract.expiry);
     const diffTime = expiryDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
+    if (isNaN(diffDays)) {
+      return { text: 'Invalid date', color: 'text-gray-400' };
+    }
+
     if (diffDays < 0) {
       return { text: 'Expired', color: 'text-red-600' };
     } else if (diffDays <= 30) {
@@ -55,7 +65,7 @@ const ContractRow = ({ contract, index }) => {
   const expiryInfo = getDaysUntilExpiry();
 
   return (
-    <tr 
+    <tr
       className="hover:bg-gray-50 cursor-pointer transition-colors group"
       onClick={handleRowClick}
     >
@@ -65,55 +75,63 @@ const ContractRow = ({ contract, index }) => {
           <div className="flex-shrink-0 h-10 w-10">
             <div className="h-10 w-10 rounded-lg bg-primary-100 flex items-center justify-center">
               <span className="text-sm font-medium text-primary-700">
-                {contract.name.charAt(0).toUpperCase()}
+                {contract?.name?.charAt(0).toUpperCase() || "?"}
               </span>
             </div>
           </div>
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900 group-hover:text-primary-600">
-              {contract.name}
+              {contract?.name || "Unnamed Contract"}
             </div>
             <div className="text-sm text-gray-500">
-              ID: {contract.id} • Row {index + 1}
+              ID: {contract?.id || "N/A"} • Row {index + 1}
             </div>
           </div>
         </div>
       </td>
-      
+
       {/* Parties */}
       <td className="table-cell">
-        <div className="text-sm text-gray-900">{contract.parties}</div>
+        <div className="text-sm text-gray-900">{contract?.parties || "N/A"}</div>
         <div className="text-xs text-gray-500 mt-1">
-          {contract.parties.split(' & ').length} parties
+          {contract?.parties ? contract.parties.split(' & ').length : 0} parties
         </div>
       </td>
-      
+
       {/* Expiry Date */}
       <td className="table-cell">
         <div className="text-sm text-gray-900">
-          {formatDate(contract.expiry)}
+          {contract?.expiry ? formatDate(contract.expiry) : "N/A"}
         </div>
         <div className={`text-xs ${expiryInfo.color} mt-1`}>
           {expiryInfo.text}
         </div>
       </td>
-      
+
       {/* Status */}
       <td className="table-cell">
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(contract.status)}`}>
-          {contract.status}
+        <span
+          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+            contract?.status ? getStatusColor(contract.status) : "bg-gray-200 text-gray-600"
+          }`}
+        >
+          {contract?.status || "Unknown"}
         </span>
       </td>
-      
+
       {/* Risk Score */}
       <td className="table-cell">
         <div className="flex items-center">
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRiskColor(contract.risk)}`}>
-            {contract.risk}
+          <span
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              contract?.risk ? getRiskColor(contract.risk) : "bg-gray-200 text-gray-600"
+            }`}
+          >
+            {contract?.risk || "N/A"}
           </span>
         </div>
       </td>
-      
+
       {/* Actions */}
       <td className="table-cell">
         <div className="flex items-center space-x-2">
@@ -127,7 +145,7 @@ const ContractRow = ({ contract, index }) => {
             <ExternalLink className="h-4 w-4" />
             <span className="ml-1 text-sm">View</span>
           </button>
-          
+
           {/* More actions dropdown */}
           <div className="relative">
             <button
@@ -139,10 +157,10 @@ const ContractRow = ({ contract, index }) => {
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
-            
+
             {showActions && (
               <>
-                <div 
+                <div
                   className="fixed inset-0 z-10"
                   onClick={() => setShowActions(false)}
                 />
